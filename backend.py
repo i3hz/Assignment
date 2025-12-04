@@ -10,7 +10,6 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph, END
 
-# --- CONFIGURATION & SETUP ---
 app = FastAPI(title="LangGraph Personality Engine")
 
 app.add_middleware(
@@ -21,7 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 1. MOCK DATA ---
 MOCK_CHAT_HISTORY = [
     "Hey, I'm struggling with this Python script today.",
     "I honestly feel like I'm not good enough to be a senior dev.",
@@ -55,7 +53,6 @@ MOCK_CHAT_HISTORY = [
     "Okay, one last bug fix before bed."
 ]
 
-# --- 2. DATA MODELS ---
 
 class MemoryProfile(BaseModel):
     user_name: Optional[str] = Field(description="The user's name if mentioned.")
@@ -76,7 +73,6 @@ class AgentState(TypedDict):
     standard_response: str
     personalized_response: str
 
-# --- 3. NODE LOGIC ---
 
 def get_llm(api_key: str):
     if not api_key:
@@ -149,7 +145,6 @@ def generate_personalized_response_node(state: AgentState, config):
     result = response.invoke({"query": state["current_query"]})
     return {"personalized_response": result.content}
 
-# --- 4. GRAPH CONSTRUCTION ---
 
 workflow = StateGraph(AgentState)
 workflow.add_node("extract_memory", extract_memory_node)
@@ -164,7 +159,6 @@ workflow.add_edge("persona_gen", END)
 
 app_graph = workflow.compile()
 
-# --- 5. API ENDPOINTS ---
 
 @app.post("/analyze")
 async def analyze(request: AnalysisRequest):
@@ -190,7 +184,6 @@ async def analyze(request: AnalysisRequest):
 
 @app.get("/")
 async def serve_ui():
-    # Looks for index.html in the same directory
     return FileResponse("index.html")
 
 if __name__ == "__main__":
