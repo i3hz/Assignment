@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personality Engine & Memory Core</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <style>
+        body { background-color: #0f172a; color: #e2e8f0; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        const MockHistory = () => (
+            <div class="glass rounded-lg p-4 h-64 overflow-y-auto text-sm text-gray-400 mb-6 font-mono">
+                <h3 class="text-xs font-bold text-blue-400 mb-2 sticky top-0 bg-slate-900 p-1">INPUT: LAST 30 MESSAGES (SIMULATED)</h3>
+                <ul class="space-y-1">
+                    <li> I'm struggling with this Python script...</li>
+                    <li> My cat Luna knocked over my water...</li>
+                    <li> I need coffee. Badly. Espresso...</li>
+                    <li> Deadlines are piling up...</li>
+                    <li> I prefer working late at night...</li>
+                    <li> Coding is fun when it works...</li>
+                    <li> Why is documentation always outdated?</li>
+                    <li> I feel anxious every time I hear a Slack notification.</li>
+                    <li>... (and 22 more messages)</li>
+                </ul>
+            </div>
+        );
+
+        const MemoryCard = ({ memory }) => {
+            if (!memory) return null;
+            return (
+                <div class="glass rounded-lg p-6 mb-6 border-l-4 border-purple-500 animate-fade-in">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="text-2xl">🧠</span> Extracted Memory Core
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <h4 class="font-bold text-purple-300 text-sm mb-2">FACTS</h4>
+                            <ul class="list-disc pl-4 text-sm space-y-1">
+                                {memory.facts.map((f, i) => <li key={i}>{f}</li>)}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-pink-300 text-sm mb-2">PREFERENCES</h4>
+                            <ul class="list-disc pl-4 text-sm space-y-1">
+                                {memory.preferences.map((p, i) => <li key={i}>{p}</li>)}
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-yellow-300 text-sm mb-2">EMOTIONAL PATTERNS</h4>
+                            <ul class="list-disc pl-4 text-sm space-y-1">
+                                {memory.emotional_patterns.map((e, i) => <li key={i}>{e}</li>)}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ResponseComparison = ({ standard, personalized, persona }) => {
+            if (!standard) return null;
+            return (
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div class="glass p-6 rounded-lg opacity-70">
+                        <h3 class="text-sm font-bold text-gray-400 mb-2">BEFORE (Standard Model)</h3>
+                        <p class="whitespace-pre-wrap">{standard}</p>
+                    </div>
+                    <div class="glass p-6 rounded-lg border border-blue-500 shadow-lg shadow-blue-500/20 animate-fade-in">
+                        <h3 class="text-sm font-bold text-blue-400 mb-2">AFTER (Personality Engine: {persona})</h3>
+                        <p class="whitespace-pre-wrap">{personalized}</p>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [query, setQuery] = useState("I'm feeling really stuck on this bug right now.");
+            const [persona, setPersona] = useState("calm_mentor");
+            const [apiKey, setApiKey] = useState("");
+            const [loading, setLoading] = useState(false);
+            const [data, setData] = useState(null);
+            const [error, setError] = useState(null);
+
+            const handleAnalyze = async () => {
+                if(!apiKey) {
+                    setError("Please enter a Google Gemini API Key.");
+                    return;
+                }
+                setLoading(true);
+                setError(null);
+                try {
+                    const res = await fetch('/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query, persona, api_key: apiKey })
+                    });
+                    if (!res.ok) throw new Error(await res.text());
+                    const result = await res.json();
+                    setData(result);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div class="max-w-5xl mx-auto">
+                    <header class="mb-8 border-b border-gray-700 pb-4">
+                        <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                            LangGraph Personality Engine
+                        </h1>
+                        <p class="text-gray-400 mt-2">Memory Extraction & Dynamic Tone Switching</p>
+                    </header>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Sidebar */}
+                        <div class="col-span-1">
+                            <label class="block text-xs font-bold text-gray-500 mb-1">GOOGLE API KEY</label>
+                            <input 
+                                type="password" 
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                class="w-full bg-slate-800 border border-slate-700 rounded p-2 mb-4 text-sm text-white"
+                                placeholder="Enter Gemini API Key..."
+                            />
+                            
+                            <MockHistory />
+                            
+                            <div class="glass p-4 rounded-lg">
+                                <label class="block text-xs font-bold text-gray-400 mb-2">SELECT PERSONA</label>
+                                <select 
+                                    value={persona} 
+                                    onChange={(e) => setPersona(e.target.value)}
+                                    class="w-full bg-slate-900 border border-slate-700 rounded p-2 mb-4 text-white"
+                                >
+                                    <option value="calm_mentor">Calm Mentor (Wise, Patient)</option>
+                                    <option value="witty_friend">Witty Friend (Slang, Casual)</option>
+                                    <option value="therapist">Therapist (Reflective, Empathetic)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Main Interaction Area */}
+                        <div class="col-span-2">
+                            <div class="glass p-6 rounded-lg mb-6">
+                                <label class="block text-xs font-bold text-blue-400 mb-2">CURRENT USER QUERY</label>
+                                <div class="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        value={query}
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        class="flex-1 bg-slate-900 border border-slate-700 rounded p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                    <button 
+                                        onClick={handleAnalyze}
+                                        disabled={loading}
+                                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded font-bold transition-colors disabled:opacity-50"
+                                    >
+                                        {loading ? "Processing..." : "Generate"}
+                                    </button>
+                                </div>
+                                {error && <p class="text-red-400 text-sm mt-2">{error}</p>}
+                            </div>
+
+                            {data && (
+                                <div class="animate-fade-in">
+                                    <MemoryCard memory={data.memory} />
+                                    <ResponseComparison 
+                                        standard={data.standard_response} 
+                                        personalized={data.personalized_response}
+                                        persona={persona}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
